@@ -1,5 +1,3 @@
-# lightingtoolUi.py - FINAL: ใช้ QTimer, เพิ่ม Translate/Rotate, เปลี่ยนปุ่มเป็น RESET
-
 try:
     from PySide6 import QtCore, QtGui, QtWidgets
     from shiboken6 import wrapInstance
@@ -11,12 +9,10 @@ import maya.OpenMayaUI as omui
 from maya import cmds
 import os, sys
 
-# ----------- Auto add local path -----------
 current_dir = os.path.dirname(__file__)
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# ----------- Import utility functions -----------
 import lightingtoolUtil as util 
 
 
@@ -26,7 +22,6 @@ class LightingToolDialog(QtWidgets.QDialog):
         self.setWindowTitle("Lighting Tool")
         self.resize(620, 380)
 
-        # ---------------------- STYLESHEET ----------------------
         self.setStyleSheet('''
             QDialog {
                 font-family: Papyrus;
@@ -69,10 +64,8 @@ class LightingToolDialog(QtWidgets.QDialog):
             }
         ''')
 
-        # ---------------------- MAIN LAYOUT ----------------------
         main_layout = QtWidgets.QVBoxLayout(self)
 
-        # ---------- CREATE BUTTONS ----------
         button_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(button_layout)
 
@@ -81,31 +74,25 @@ class LightingToolDialog(QtWidgets.QDialog):
         self.createSpotBtn = QtWidgets.QPushButton("Create Spotlight")
         self.createDirBtn = QtWidgets.QPushButton("Create Directionlight")
 
-        # เพิ่มเฉพาะปุ่ม Light พื้นฐาน
         for btn in [self.createAreaBtn, self.createPointBtn, self.createSpotBtn, self.createDirBtn]:
             button_layout.addWidget(btn)
 
-        # ---------- BODY ----------
         body_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(body_layout)
 
-        # LEFT PANEL
         left_layout = QtWidgets.QVBoxLayout()
         self.light_list = QtWidgets.QListWidget()
         left_layout.addWidget(QtWidgets.QLabel("LIGHTS"))
         left_layout.addWidget(self.light_list)
 
-        # bottom buttons
         btn_layout = QtWidgets.QHBoxLayout()
-        self.resetBtn = QtWidgets.QPushButton("RESET") # <--- เปลี่ยนจาก Refresh เป็น Reset
-        self.selectBtn = QtWidgets.QPushButton("SELECT")
+        self.resetBtn = QtWidgets.QPushButton("RESET") 
         self.deleteBtn = QtWidgets.QPushButton("DELETE")
         btn_layout.addWidget(self.resetBtn)
         btn_layout.addWidget(self.selectBtn)
         btn_layout.addWidget(self.deleteBtn)
         left_layout.addLayout(btn_layout)
 
-        # RIGHT PANEL (Properties)
         self.right_panel = QtWidgets.QWidget()
         right_main_layout = QtWidgets.QVBoxLayout(self.right_panel)
 
@@ -126,7 +113,6 @@ class LightingToolDialog(QtWidgets.QDialog):
         self.color_btn.setStyleSheet("background-color: #F5D5C5; border: 1px solid gray;")
         self.color_btn.clicked.connect(self.pick_color)
 
-        # Translate Inputs
         translate_layout = QtWidgets.QHBoxLayout()
         self.tx = QtWidgets.QDoubleSpinBox()
         self.ty = QtWidgets.QDoubleSpinBox()
@@ -135,8 +121,7 @@ class LightingToolDialog(QtWidgets.QDialog):
             spin.setRange(-9999, 9999)
             spin.setDecimals(3)
             translate_layout.addWidget(spin)
-            
-        # Rotation Inputs
+
         rotate_layout = QtWidgets.QHBoxLayout()
         self.rx = QtWidgets.QDoubleSpinBox()
         self.ry = QtWidgets.QDoubleSpinBox()
@@ -149,7 +134,7 @@ class LightingToolDialog(QtWidgets.QDialog):
         right_layout.addRow("INTENSITY", self.intensity_box)
         right_layout.addRow("COLOR", self.color_btn)
         right_layout.addRow("TRANSLATE", translate_layout)
-        right_layout.addRow("ROTATE", rotate_layout) # <-- เพิ่มแถว Rotation
+        right_layout.addRow("ROTATE", rotate_layout) 
 
         self.applyBtn = QtWidgets.QPushButton("APPLY")
         right_layout.addRow("", self.applyBtn)
@@ -161,41 +146,32 @@ class LightingToolDialog(QtWidgets.QDialog):
         body_layout.addLayout(left_layout, 1)
         body_layout.addWidget(self.right_panel, 1)
 
-        # ---------- Connections ----------
-        self.resetBtn.clicked.connect(self.reset_light) # <--- เชื่อมต่อปุ่ม Reset
+        self.resetBtn.clicked.connect(self.reset_light) 
         self.light_list.itemSelectionChanged.connect(self.show_light_properties)
         self.selectBtn.clicked.connect(self.select_light)
         self.deleteBtn.clicked.connect(self.delete_light)
-        self.applyBtn.clicked.connect(self.apply_changes)
-
-        # CREATE LIGHT BUTTONS
+      
         self.createAreaBtn.clicked.connect(lambda: self.create_and_refresh("area"))
         self.createPointBtn.clicked.connect(lambda: self.create_and_refresh("point"))
         self.createSpotBtn.clicked.connect(lambda: self.create_and_refresh("spot"))
         self.createDirBtn.clicked.connect(lambda: self.create_and_refresh("directional"))
 
-        # Initial refresh
         self.refresh_lights()
 
-        # 🔁 เริ่มระบบ auto-refresh ทุก 0.5 วินาที
         self._setup_timer_refresh()
 
 
-    # ---------- Auto Refresh System ----------
     def _setup_timer_refresh(self):
-        """ตั้ง timer ให้ refresh อัตโนมัติ"""
         self._timer = QtCore.QTimer(self)
         self._timer.timeout.connect(self._poll_scene_changes)
-        self._timer.start(500)  # ทุก 0.5 วินาที
+        self._timer.start(500)  
 
     def _poll_scene_changes(self):
-        """ตรวจสอบว่า scene มีการเพิ่ม/ลบ light หรือไม่ (นี่คือฟังก์ชัน Refresh ของเดิม)"""
         current = [self.light_list.item(i).text() for i in range(self.light_list.count())]
         scene = util.get_all_lights()
         if sorted(current) != sorted(scene):
             self.refresh_lights()
 
-    # ---------- Main Functionalities ----------
     def create_and_refresh(self, light_type):
         light = util.create_light(light_type)
         if light:
@@ -223,13 +199,11 @@ class LightingToolDialog(QtWidgets.QDialog):
         if cmds.objExists(light):
             light_shape = util.get_shape(light)
 
-            # Intensity
             if light_shape and cmds.attributeQuery("intensity", node=light_shape, exists=True):
                 self.intensity_box.setValue(cmds.getAttr(light_shape + ".intensity"))
             else:
                 self.intensity_box.setValue(0.0)
 
-            # Color
             if light_shape and cmds.attributeQuery("color", node=light_shape, exists=True):
                 color = cmds.getAttr(light_shape + ".color")[0]
                 self.color_btn.setStyleSheet(
@@ -238,7 +212,6 @@ class LightingToolDialog(QtWidgets.QDialog):
             else:
                 self.color_btn.setStyleSheet("background-color: #F5D5C5; border: 1px solid gray;")
 
-            # Translate
             if cmds.objExists(light + ".translate"):
                 pos = cmds.getAttr(light + ".translate")[0]
                 self.tx.setValue(pos[0])
@@ -248,8 +221,7 @@ class LightingToolDialog(QtWidgets.QDialog):
                 self.tx.setValue(0.0)
                 self.ty.setValue(0.0)
                 self.tz.setValue(0.0)
-                
-            # Rotate
+
             if cmds.objExists(light + ".rotate"):
                 rot = cmds.getAttr(light + ".rotate")[0]
                 self.rx.setValue(rot[0])
@@ -273,27 +245,21 @@ class LightingToolDialog(QtWidgets.QDialog):
             self.right_panel.setVisible(False)
 
     def reset_light(self):
-        """***ฟังก์ชันใหม่: ตั้งค่า Light ที่เลือกกลับไปเป็นค่าเริ่มต้น***"""
         items = self.light_list.selectedItems()
         if not items:
             print("Please select a light to reset.")
             return
 
         light = items[0].text()
-        
-        # 1. Reset Intensity (ค่าเริ่มต้นของ Maya Light มักเป็น 1.0)
+
         util.set_intensity(light, 1.0) 
 
-        # 2. Reset Color (สีขาว)
         util.set_color(light, (1.0, 1.0, 1.0))
 
-        # 3. Reset Translate
         util.set_translate(light, (0.0, 0.0, 0.0))
 
-        # 4. Reset Rotate
         util.set_rotate(light, (0.0, 0.0, 0.0))
-        
-        # 5. อัปเดต UI ให้แสดงค่าที่ถูก Reset
+
         self.show_light_properties()
         
         print(f"Reset {light} to default values.")
@@ -316,20 +282,16 @@ class LightingToolDialog(QtWidgets.QDialog):
         if not light_shape:
             return
 
-        # Apply Intensity
         util.set_intensity(light, self.intensity_box.value())
 
-        # Apply Color
         color = self.color_btn.palette().button().color()
         util.set_color(light, (color.redF(), color.greenF(), color.blueF()))
 
-        # Apply Translate
         tx_val = self.tx.value()
         ty_val = self.ty.value()
         tz_val = self.tz.value()
         util.set_translate(light, (tx_val, ty_val, tz_val))
-        
-        # Apply Rotate
+
         rx_val = self.rx.value()
         ry_val = self.ry.value()
         rz_val = self.rz.value()
@@ -341,7 +303,6 @@ class LightingToolDialog(QtWidgets.QDialog):
 
 def run():
     global ui
-    # บังคับ Reload util เพื่อให้แน่ใจว่าได้ฟังก์ชันใหม่ทั้งหมด
     try:
         import importlib
         import lightingtoolUtil as util
@@ -350,7 +311,6 @@ def run():
         print(f"Warning: Could not reload lightingtoolUtil: {e}")
 
     try:
-        # หยุด QTimer และปิด UI เก่า
         if 'ui' in globals() and ui is not None:
              if hasattr(ui, '_timer') and ui._timer.isActive():
                  ui._timer.stop()
@@ -359,7 +319,6 @@ def run():
     except:
         pass
 
-    # รัน UI ใหม่
     ptr = wrapInstance(int(omui.MQtUtil.mainWindow()), QtWidgets.QWidget)
     ui = LightingToolDialog(parent=ptr)
     ui.show()
